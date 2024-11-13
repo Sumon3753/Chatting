@@ -1,57 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Login or Register</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat App</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="auth-container">
-        <h2>Login</h2>
-        <form id="login-form">
-            <input type="text" id="login-username" placeholder="Username" required>
-            <input type="password" id="login-password" placeholder="Password" required>
-            <button type="button" onclick="login()">Login</button>
-        </form>
-        <h2>Register</h2>
-        <form id="register-form">
-            <input type="text" id="register-username" placeholder="Username" required>
-            <input type="password" id="register-password" placeholder="Password" required>
-            <button type="button" onclick="register()">Register</button>
-        </form>
-    </div>
-</body>
-<script>
-async function login() {
-    const username = document.getElementById('login-username').value;
-    const password = document.getElementById('login-password').value;
-    const response = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-    });
-    if (response.ok) {
-        const { token } = await response.json();
-        localStorage.setItem('token', token);
-        window.location.href = '/chat.html';
-    } else {
-        alert("Login failed");
-    }
-}
 
-async function register() {
-    const username = document.getElementById('register-username').value;
-    const password = document.getElementById('register-password').value;
-    const response = await fetch('/api/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-    });
-    if (response.ok) {
-        alert("Registration successful! Please log in.");
-    } else {
-        alert("User already exists.");
+  <div class="chat-container">
+    <div class="chat-header">Chat Room</div>
+    <div class="chat-messages" id="messages"></div>
+    <div class="chat-input-container">
+      <input type="text" id="messageInput" class="chat-input" placeholder="Type a message..." />
+      <button id="sendButton" class="send-button">Send</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const messageInput = document.getElementById("messageInput");
+    const sendButton = document.getElementById("sendButton");
+    const messagesDiv = document.getElementById("messages");
+
+    // Function to append messages to the chat
+    function appendMessage(msg, sender) {
+      const messageElement = document.createElement("div");
+      messageElement.classList.add("chat-message", sender);
+      messageElement.innerHTML = `<p>${msg}</p>`;
+      messagesDiv.appendChild(messageElement);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight; // Auto-scroll to the bottom
     }
-}
-</script>
+
+    // Send message when the button is clicked
+    sendButton.addEventListener("click", () => {
+      const message = messageInput.value.trim();
+      if (message) {
+        socket.emit("chat message", message); // Emit the message to the server
+        appendMessage(message, "user"); // Display user message
+        messageInput.value = ""; // Clear the input
+      }
+    });
+
+    // Receive and display messages from the server
+    socket.on("chat message", (msg) => {
+      appendMessage(msg, "other"); // Display received message
+    });
+  </script>
+
+</body>
 </html>
